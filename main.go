@@ -25,17 +25,17 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 		"<p>如有疑惑，请联系我们。</p>")
 }
 
-func articlesShowHander(w http.ResponseWriter, r *http.Request) {
+func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	fmt.Fprint(w, "文章 ID："+id)
 }
 
-func articlesIndexHander(w http.ResponseWriter, r *http.Request) {
+func articlesIndexHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "访问文章列表")
 }
 
-func articlesStoreHander(w http.ResponseWriter, r *http.Request) {
+func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "创建新的文章")
 }
 
@@ -45,18 +45,18 @@ func main() {
 	router.HandleFunc("/", homeHandler).Methods("GET").Name("home")
 	router.HandleFunc("/about", aboutHandler).Methods("GET").Name("about")
 
-	router.HandleFunc("/articles/{id:[0-9]+}", articlesShowHander).Methods("GET").Name("articles.show")
-	router.HandleFunc("/articles", articlesIndexHander).Methods("GET").Name("articles.index")
-	router.HandleFunc("/articles", articlesStoreHander).Methods("POST").Name("articles.store")
+	router.HandleFunc("/articles/{id:[0-9]+}", articlesShowHandler).Methods("GET").Name("articles.show")
+	router.HandleFunc("/articles", articlesIndexHandler).Methods("GET").Name("articles.index")
+	router.HandleFunc("/articles", articlesStoreHandler).Methods("POST").Name("articles.store")
 
 	// 自定义 404 页面
 	router.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 
 	// 通过命名路由获取 URL 示例
 	homeURL, _ := router.Get("home").URL()
-	fmt.Println("homeURL:", homeURL)
-	articleURL, _ := router.Get("acticles.show").URL("id", "23")
-	fmt.Println("articleURL:", articleURL)
+	fmt.Println("homeURL: ", homeURL)
+	articleURL, _ := router.Get("articles.show").URL("id", "23")
+	fmt.Println("articleURL: ", articleURL)
 
 	http.ListenAndServe(":3000", router)
 }
