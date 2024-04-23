@@ -36,5 +36,16 @@ func main() {
 		fmt.Fprint(w, "文章 ID："+id)
 	})
 
+	// 无法直接从路由上区分 POST 或者 GET 等 HTTP 请求方法，只能手动判断
+	// 列表 or 创建
+	router.HandleFunc("/articles", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			fmt.Fprint(w, "访问文章列表")
+		case "POST":
+			fmt.Fprint(w, "创建新的文章")
+		}
+	})
+
 	http.ListenAndServe(":3000", router)
 }
