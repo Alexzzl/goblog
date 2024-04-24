@@ -125,23 +125,23 @@ func forceHTMLMiddleware(next http.Handler) http.Handler {
 }
 
 func articlesCreateHandler(w http.ResponseWriter, r *http.Request) {
-	html := `
-	<!DOCTYPE html>
-	<html lang="en">
-	<head>
-		<title>创建文章 —— 我的技术博客</title>
-	</head>
-	<body>
-	    <form action="%s?test=data" method="post">
-			<p>tiile:</p><p><input type="text" name="title"></p>
-			<p>body:</p><p><textarea name="body" cols="30" rows="10"></textarea></p>
-			<p><button type="submit">提交</button></p>
-		</form>
-	</body>
-	</html>
-	`
+
 	storeURL, _ := router.Get("articles.store").URL()
-	fmt.Fprintf(w, html, storeURL)
+	data := ArticlesFormData{
+		Title:  "",
+		Body:   "",
+		URL:    storeURL,
+		Errors: nil,
+	}
+	tmpl, err := template.ParseFiles("resources/views/articles/create.gohtml")
+	if err != nil {
+		panic(err)
+	}
+
+	err = tmpl.Execute(w, data)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func removeTrailingSlash(next http.Handler) http.Handler {
