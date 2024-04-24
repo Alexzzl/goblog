@@ -36,22 +36,35 @@ func articlesIndexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		// 解析错误，这里应该有错误处理
-		fmt.Fprint(w, "请提供正确的数据！")
-		return
+	title := r.PostFormValue("title")
+	body := r.PostFormValue("body")
+
+	errors := make(map[string]string)
+
+	// 验证标题
+	if title == "" {
+		errors["title"] = "标题不能为空"
+	} else if len(title) < 3 || len(title) > 40 {
+		errors["title"] = "标题长度需介于 3-40"
 	}
 
-	title := r.PostForm.Get("title")
-	fmt.Fprintf(w, "POST PostForm: %v <br>", r.PostForm)
-	fmt.Fprintf(w, "POST     Form: %v <br>", r.Form)
-	fmt.Fprintf(w, "title 的值为: %v <br>", title)
+	// 验证内容
+	if body == "" {
+		errors["body"] = "内容不能为空"
+	} else if len(body) < 10 {
+		errors["body"] = "内容长度需大于或等于 10 个字节"
+	}
 
-	fmt.Fprintf(w, "r.Form 中 title 的值为: %v <br>", r.FormValue("title"))
-	fmt.Fprintf(w, "r.PostForm 中 title 的值为: %v <br>", r.PostFormValue("title"))
-	fmt.Fprintf(w, "r.Form 中 test 的值为: %v <br>", r.FormValue("test"))
-	fmt.Fprintf(w, "r.PostForm 中 test 的值为: %v <br>", r.PostFormValue("test"))
+	// 检查是否有错误
+	if len(errors) == 0 {
+		fmt.Fprint(w, "验证通过!<br>")
+		fmt.Fprintf(w, "title 的值为: %v <br>", title)
+		fmt.Fprintf(w, "title 的长度为: %v <br>", len(title))
+		fmt.Fprintf(w, "body 的值为: %v <br>", body)
+		fmt.Fprintf(w, "body 的长度为: %v <br>", len(body))
+	} else {
+		fmt.Fprintf(w, "有错误发生，errors 的值为: %v <br>", errors)
+	}
 }
 
 func forceHTMLMiddleware(next http.Handler) http.Handler {
