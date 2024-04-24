@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/gorilla/mux"
 )
@@ -44,14 +45,14 @@ func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
 	// 验证标题
 	if title == "" {
 		errors["title"] = "标题不能为空"
-	} else if len(title) < 3 || len(title) > 40 {
+	} else if utf8.RuneCountInString(title) < 3 || len(title) > 40 {
 		errors["title"] = "标题长度需介于 3-40"
 	}
 
 	// 验证内容
 	if body == "" {
 		errors["body"] = "内容不能为空"
-	} else if len(body) < 10 {
+	} else if utf8.RuneCountInString(body) < 10 {
 		errors["body"] = "内容长度需大于或等于 10 个字节"
 	}
 
@@ -59,9 +60,9 @@ func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
 	if len(errors) == 0 {
 		fmt.Fprint(w, "验证通过!<br>")
 		fmt.Fprintf(w, "title 的值为: %v <br>", title)
-		fmt.Fprintf(w, "title 的长度为: %v <br>", len(title))
+		fmt.Fprintf(w, "title 的长度为: %v <br>", utf8.RuneCountInString(title))
 		fmt.Fprintf(w, "body 的值为: %v <br>", body)
-		fmt.Fprintf(w, "body 的长度为: %v <br>", len(body))
+		fmt.Fprintf(w, "body 的长度为: %v <br>", utf8.RuneCountInString(body))
 	} else {
 		fmt.Fprintf(w, "有错误发生，errors 的值为: %v <br>", errors)
 	}
