@@ -8,6 +8,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 )
 
@@ -154,6 +155,10 @@ func removeTrailingSlash(next http.Handler) http.Handler {
 		// 2. 将请求传递下去
 		next.ServeHTTP(w, r)
 	})
+}
+
+func init() {
+	fmt.Println("init")
 }
 
 func main() {
