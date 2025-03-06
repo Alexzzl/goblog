@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"html/template"
@@ -11,27 +12,53 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"net"
+
 	"github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"golang.org/x/crypto/ssh"
 )
 
 var router = mux.NewRouter()
 var db *sql.DB
 
 func initDB() {
+	// 设置 SSH 配置
+	sshConfig := &ssh.ClientConfig{
+		User: "root",
+		Auth: []ssh.AuthMethod{
+			ssh.Password("zzl19961120..."), // 也可以使用密钥认证
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(), // 生产环境建议使用具体的主机密钥
+	}
 
-	var err error
+	// 建立 SSH 连接
+	sshClient, err := ssh.Dial("tcp", "119.8.108.55:22", sshConfig)
+	checkError(err)
+	defer sshClient.Close()
+
+	// 通过 SSH 建立 MySQL 连接
+	mysqlAddr := "127.0.0.1:3306"
+	tunnel, err := sshClient.Dial("tcp", mysqlAddr)
+	checkError(err)
+
 	config := mysql.Config{
-		User:                 "homestead",
-		Passwd:               "secret",
-		Addr:                 "127.0.0.1:3306",
+		User:                 "root",
+		Passwd:               "zzl19961120...",
 		Net:                  "tcp",
+		Addr:                 "127.0.0.1:3306",
 		DBName:               "goblog",
 		AllowNativePasswords: true,
 	}
 
+	// 使用 RegisterDialContext 注册自定义连接器
+	mysql.RegisterDialContext("tcp", func(ctx context.Context, addr string) (net.Conn, error) {
+		return tunnel, nil
+	})
+
 	// 准备数据库连接池
 	db, err = sql.Open("mysql", config.FormatDSN())
+	//fmt.Println(config.FormatDSN())
 	checkError(err)
 
 	// 设置最大连接数
