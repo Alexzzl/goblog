@@ -162,7 +162,7 @@ type ArticlesFormData struct {
 
 func articlesCreateHandler(w http.ResponseWriter, r *http.Request) {
 
-	storeURL, _ := router.Get("articles.store").URL()
+	storeURL, _ := router.Get("article.store").URL()
 	data := ArticlesFormData{
 		Title:  "",
 		Body:   "",
@@ -201,7 +201,20 @@ func removeTrailingSlash(next http.Handler) http.Handler {
 	})
 }
 
+func createTables() {
+	createArticlesSQL := `CREATE TABLE IF NOT EXISTS articles(
+    id bigint(20) PRIMARY KEY AUTO_INCREMENT NOT NULL,
+    title varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+    body longtext COLLATE utf8mb4_unicode_ci);`
+
+	_, err := db.Exec(createArticlesSQL)
+	checkError(err)
+}
+
 func main() {
+	initDB()
+	//createTables()
+
 	router.HandleFunc("/", homeHandler).Methods("GET").Name("home")
 	router.HandleFunc("/about", aboutHandler).Methods("GET").Name("about")
 	router.HandleFunc("/articles/{id:[0-9]+}", articlesShowHandler).Methods("GET").Name("article.show")
@@ -215,10 +228,10 @@ func main() {
 	// 中间件：强制内容类型为 HTML
 	router.Use(forceHTMLMiddleware)
 
-	err := http.ListenAndServe(":3000", removeTrailingSlash(router))
-	if err != nil {
-		fmt.Printf("服务器启动失败：%v\n", err)
-	} else {
-		fmt.Printf("服务器启动成功，访问地址：http://localhost:3000\n")
-	}
+	http.ListenAndServe(":3000", removeTrailingSlash(router))
+	// if err != nil {
+	// 	fmt.Printf("服务器启动失败：%v\n", err)
+	// } else {
+	// 	fmt.Printf("服务器启动成功，访问地址：http://localhost:3000\n")
+	// }
 }
