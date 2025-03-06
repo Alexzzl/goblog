@@ -96,10 +96,44 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 		"<p>如有疑惑，请联系我们。</p>")
 }
 
+// Artcle 对应一条文章数据
+type Article struct {
+	Title, Body string
+	ID          int64
+}
+
 func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
+	// 1. 获取 URL 参数
 	vars := mux.Vars(r)
 	id := vars["id"]
-	fmt.Fprint(w, "文章 ID："+id)
+
+	//  2. 读取对应的文章数据
+	article := Article{}
+	query := "SELECT * FROM articles WHERE id = ?"
+	err := db.QueryRow(query, id).Scan(&article.ID, &article.Title, &article.Body)
+
+	// 3. 如果出现错误
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// 3.1 数据没找到 返回 404 页面
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, "<h1>404 文章未找到 :(</h1>"+
+				"<p>如有疑惑，请联系我们。</p>")
+		} else {
+			// 3.2 数据库错误
+			checkError(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "500 服务器内部错误 文章创建失败，错误信息为：%v", err)
+		}
+	} else {
+		// 4. 读取成功, 显示文章
+		tmpl, err := template.ParseFiles("resources/views/articles/show.gohtml")
+		checkError(err)
+
+		err = tmpl.Execute(w, article)
+		checkError(err)
+		//fmt.Fprint(w, "<h1>"+article.Title+"</h1>")
+	}
 }
 
 func articlesIndexHandler(w http.ResponseWriter, r *http.Request) {
@@ -138,7 +172,7 @@ func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 
-		storeURL, _ := router.Get("article.store").URL()
+		storeURL, _ := router.Get("articles.store").URL()
 
 		data := ArticlesFormData{
 			Title:  title,
@@ -200,7 +234,7 @@ type ArticlesFormData struct {
 
 func articlesCreateHandler(w http.ResponseWriter, r *http.Request) {
 
-	storeURL, _ := router.Get("article.store").URL()
+	storeURL, _ := router.Get("articles.store").URL()
 	data := ArticlesFormData{
 		Title:  "",
 		Body:   "",
@@ -256,10 +290,10 @@ func main() {
 
 	router.HandleFunc("/", homeHandler).Methods("GET").Name("home")
 	router.HandleFunc("/about", aboutHandler).Methods("GET").Name("about")
-	router.HandleFunc("/articles/{id:[0-9]+}", articlesShowHandler).Methods("GET").Name("article.show")
-	router.HandleFunc("/articles", articlesIndexHandler).Methods("GET").Name("article.index")
-	router.HandleFunc("/articles", articlesStoreHandler).Methods("POST").Name("article.store")
-	router.HandleFunc("/articles/create", articlesCreateHandler).Methods("GET").Name("article.create")
+	router.HandleFunc("/articles/{id:[0-9]+}", articlesShowHandler).Methods("GET").Name("articles.show")
+	router.HandleFunc("/articles", articlesIndexHandler).Methods("GET").Name("articles.index")
+	router.HandleFunc("/articles", articlesStoreHandler).Methods("POST").Name("articles.store")
+	router.HandleFunc("/articles/create", articlesCreateHandler).Methods("GET").Name("articles.create")
 
 	// 自定义 404 页面
 	router.NotFoundHandler = http.HandlerFunc(notFoundHandler)
