@@ -104,13 +104,6 @@ func articlesIndexHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "访问文章列表")
 }
 
-// ArticlesFormData 创建博文表单数据
-type ArticlesFormData struct {
-	Title, Body string
-	URL         *url.URL
-	Errors      map[string]string
-}
-
 func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.PostFormValue("title")
 	body := r.PostFormValue("body")
@@ -139,29 +132,8 @@ func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "body 的值为: %v <br>", body)
 		fmt.Fprintf(w, "body 的长度为: %v <br>", utf8.RuneCountInString(body))
 	} else {
-		html := `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>创建文章 —— 我的技术博客</title>
-    <style type="text/css">.error {color: red;}</style>
-</head>
-<body>
-    <form action="{{ .URL }}" method="post">
-        <p>tiile:</p><p><input type="text" name="title" value="{{ .Title }}"></p>
-        {{ with .Errors.title }}
-        <p class="error">{{ . }}</p>
-        {{ end }}
-        <p>body:</p><p><textarea name="body" cols="30" rows="10">{{ .Body }}</textarea></p>
-        {{ with .Errors.body }}
-        <p class="error">{{ . }}</p>
-        {{ end }}
-        <p><button type="submit">提交</button></p>
-    </form>
-</body>
-</html>
-`
-		storeURL, _ := router.Get("articles.store").URL()
+
+		storeURL, _ := router.Get("article.store").URL()
 
 		data := ArticlesFormData{
 			Title:  title,
@@ -169,7 +141,7 @@ func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
 			URL:    storeURL,
 			Errors: errors,
 		}
-		tmpl, err := template.New("create-form").Parse(html)
+		tmpl, err := template.ParseFiles("resources/views/articles/create.gohtml")
 		if err != nil {
 			panic(err)
 		}
@@ -181,13 +153,11 @@ func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func forceHTMLMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 1. 设置标头
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		// 2. 继续处理请求
-		next.ServeHTTP(w, r)
-	})
+// ArticlesFormData 创建博文表单数据
+type ArticlesFormData struct {
+	Title, Body string
+	URL         *url.URL
+	Errors      map[string]string
 }
 
 func articlesCreateHandler(w http.ResponseWriter, r *http.Request) {
@@ -210,6 +180,15 @@ func articlesCreateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func forceHTMLMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 1. 设置标头
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		// 2. 继续处理请求
+		next.ServeHTTP(w, r)
+	})
+}
+
 func removeTrailingSlash(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// 1. 除首页以外，移除所有请求路径后面的斜杆
@@ -222,20 +201,13 @@ func removeTrailingSlash(next http.Handler) http.Handler {
 	})
 }
 
-func init() {
-	fmt.Println("init")
-}
-
 func main() {
-	initDB()
-
 	router.HandleFunc("/", homeHandler).Methods("GET").Name("home")
 	router.HandleFunc("/about", aboutHandler).Methods("GET").Name("about")
-
-	router.HandleFunc("/articles/{id:[0-9]+}", articlesShowHandler).Methods("GET").Name("articles.show")
-	router.HandleFunc("/articles", articlesIndexHandler).Methods("GET").Name("articles.index")
-	router.HandleFunc("/articles", articlesStoreHandler).Methods("POST").Name("articles.store")
-	router.HandleFunc("/articles/create", articlesCreateHandler).Methods("GET").Name("articles.create")
+	router.HandleFunc("/articles/{id:[0-9]+}", articlesShowHandler).Methods("GET").Name("article.show")
+	router.HandleFunc("/articles", articlesIndexHandler).Methods("GET").Name("article.index")
+	router.HandleFunc("/articles", articlesStoreHandler).Methods("POST").Name("article.store")
+	router.HandleFunc("/articles/create", articlesCreateHandler).Methods("GET").Name("article.create")
 
 	// 自定义 404 页面
 	router.NotFoundHandler = http.HandlerFunc(notFoundHandler)
@@ -243,7 +215,10 @@ func main() {
 	// 中间件：强制内容类型为 HTML
 	router.Use(forceHTMLMiddleware)
 
-	fmt.Println("URL: http://127.0.0.1:3000")
-
-	http.ListenAndServe(":3000", removeTrailingSlash(router))
+	err := http.ListenAndServe(":3000", removeTrailingSlash(router))
+	if err != nil {
+		fmt.Printf("服务器启动失败：%v\n", err)
+	} else {
+		fmt.Printf("服务器启动成功，访问地址：http://localhost:3000\n")
+	}
 }
