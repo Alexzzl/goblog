@@ -21,6 +21,7 @@ import (
 
 var router = mux.NewRouter()
 var db *sql.DB
+var sshClient *ssh.Client // 添加全局 SSH 客户端变量
 
 func initDB() {
 	// 设置 SSH 配置
@@ -33,9 +34,9 @@ func initDB() {
 	}
 
 	// 建立 SSH 连接
-	sshClient, err := ssh.Dial("tcp", "119.8.108.55:22", sshConfig)
+	var err error
+	sshClient, err = ssh.Dial("tcp", "119.8.108.55:22", sshConfig)
 	checkError(err)
-	defer sshClient.Close()
 
 	// 通过 SSH 建立 MySQL 连接
 	mysqlAddr := "127.0.0.1:3306"
@@ -203,9 +204,9 @@ func removeTrailingSlash(next http.Handler) http.Handler {
 
 func createTables() {
 	createArticlesSQL := `CREATE TABLE IF NOT EXISTS articles(
-    id bigint(20) PRIMARY KEY AUTO_INCREMENT NOT NULL,
-    title varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-    body longtext COLLATE utf8mb4_unicode_ci);`
+	id bigint(20) PRIMARY KEY AUTO_INCREMENT NOT NULL,
+	title varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+	body longtext COLLATE utf8mb4_unicode_ci);`
 
 	_, err := db.Exec(createArticlesSQL)
 	checkError(err)
@@ -213,6 +214,7 @@ func createTables() {
 
 func main() {
 	initDB()
+	defer sshClient.Close() // 移到 main 函数中
 	//createTables()
 
 	router.HandleFunc("/", homeHandler).Methods("GET").Name("home")
