@@ -17,10 +17,12 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"goblog/pkg/route"
 	"golang.org/x/crypto/ssh"
 )
 
-var router = mux.NewRouter()
+// var router = mux.NewRouter()
+var router *mux.Router
 var db *sql.DB
 var sshClient *ssh.Client // 添加全局 SSH 客户端变量
 
@@ -162,7 +164,7 @@ func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 		// 4. 读取成功, 显示文章
 		tmpl, err := template.New("show.gohtml").
 			Funcs(template.FuncMap{
-				"RouteName2URL": RouterName2URL,
+				"RouteName2URL": route.Name2URL,
 				"Int64ToString": Int64ToString,
 			}).ParseFiles("resources/views/articles/show.gohtml")
 		checkError(err)
@@ -171,16 +173,6 @@ func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 		checkError(err)
 		//fmt.Fprint(w, "<h1>"+article.Title+"</h1>")
 	}
-}
-
-// RouteName2URL 通过路由名称来获取 URL
-func RouterName2URL(routeName string, pairs ...string) string {
-	url, err := router.Get(routeName).URL(pairs...)
-	if err != nil {
-		checkError(err)
-		return ""
-	}
-	return url.String()
 }
 
 // Int64ToString 将 int64 转换为 string
@@ -518,6 +510,9 @@ func main() {
 	initDB()
 	defer sshClient.Close() // 移到 main 函数中
 	//createTables()
+
+	route.Initialize()
+	router = route.Router
 
 	router.HandleFunc("/", homeHandler).Methods("GET").Name("home")
 	router.HandleFunc("/about", aboutHandler).Methods("GET").Name("about")
