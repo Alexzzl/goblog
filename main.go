@@ -16,6 +16,7 @@ import (
 
 	"goblog/pkg/logger"
 	"goblog/pkg/route"
+	"goblog/pkg/types"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
@@ -155,7 +156,7 @@ func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 		tmpl, err := template.New("show.gohtml").
 			Funcs(template.FuncMap{
 				"RouteName2URL": route.Name2URL,
-				"Int64ToString": Int64ToString,
+				"Int64ToString": types.Int64ToString,
 			}).ParseFiles("resources/views/articles/show.gohtml")
 		logger.LogError(err)
 
@@ -163,11 +164,6 @@ func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 		logger.LogError(err)
 		//fmt.Fprint(w, "<h1>"+article.Title+"</h1>")
 	}
-}
-
-// Int64ToString 将 int64 转换为 string
-func Int64ToString(value int64) string {
-	return strconv.FormatInt(value, 10)
 }
 
 func articlesIndexHandler(w http.ResponseWriter, r *http.Request) {
