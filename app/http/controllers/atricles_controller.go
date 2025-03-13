@@ -4,6 +4,7 @@ package controllers
 import (
 	"database/sql"
 	"fmt"
+	"goblog/app/models/article"
 	"goblog/pkg/logger"
 	"goblog/pkg/route"
 	"goblog/pkg/types"
@@ -15,25 +16,13 @@ import (
 type ArticlesController struct {
 }
 
-// type Article struct {
-// 	Title, Body string
-// 	ID          int64
-// }
-
-// func getArticleByID(id string) (Article, error) {
-// 	article := Article{}
-// 	query := "SELECT * FROM articles WHERE id = ?"
-// 	err := DB.QueryRow(query, id).Scan(&article.ID, &article.Title, &article.Body)
-// 	return article, err
-// }
-
 // Show 文章详情页面
-func (*ArticlesController) Home(w http.ResponseWriter, r *http.Request) {
+func (*ArticlesController) Show(w http.ResponseWriter, r *http.Request) {
 	// 1. 获取 URL 参数
 	id := route.GetRouteVariable("id", r)
 
 	//  2. 读取对应的文章数据
-	article, err := getArticleByID(id)
+	article, err := article.Get(id)
 
 	// 3. 如果出现错误
 	if err != nil {
@@ -61,8 +50,4 @@ func (*ArticlesController) Home(w http.ResponseWriter, r *http.Request) {
 		logger.LogError(err)
 		//fmt.Fprint(w, "<h1>"+article.Title+"</h1>")
 	}
-}
-
-// Index 文章列表页面
-func (*ArticlesController) About(w http.ResponseWriter, r *http.Request) {
 }

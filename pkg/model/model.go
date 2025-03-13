@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// DB gorm.DB 对象
 var DB *gorm.DB
 
 // ConnectDB 初始化模型
