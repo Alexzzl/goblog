@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"goblog/pkg/route"
 	"goblog/routes"
 
 	"github.com/gorilla/mux"
@@ -9,9 +10,10 @@ import (
 // SetupRoute 路由初始化
 func SetupRoute() *mux.Router {
 	// 初始化路由
-	Router := mux.NewRouter()
+	router := mux.NewRouter()
 	// 注册路由
-	routes.RegisterWebRoutes(Router)
+	routes.RegisterWebRoutes(router)
+	route.SetRoute(router)
 	// 返回路由
-	return Router
+	return router
 }

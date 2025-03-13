@@ -19,3 +19,8 @@ func StringToUint64(value string) uint64 {
 	}
 	return num
 }
+
+// Uint64ToString 将 uint64 转换为 string
+func Uint64ToString(value uint64) string {
+	return strconv.FormatUint(value, 10)
+}
