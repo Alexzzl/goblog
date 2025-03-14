@@ -13,6 +13,11 @@ type PagesController struct {
 // Home 首页
 func (*PagesController) Home(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "<h1>Hello, 欢迎来到 Alex goblog！</h1>")
+	fmt.Fprint(w, "<a href='/articles'>文章列表</a>")
+	fmt.Fprint(w, "<p>"+
+		"通过本博客您可以了解到 Alex 在编程路上的故事，"+
+		"也希望您能通过博客的形式和我交流。"+
+		"</p>")
 }
 
 // About 关于我们页面

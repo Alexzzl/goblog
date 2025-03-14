@@ -52,3 +52,27 @@ func (*ArticlesController) Show(w http.ResponseWriter, r *http.Request) {
 		//fmt.Fprint(w, "<h1>"+article.Title+"</h1>")
 	}
 }
+
+// Index 文章列表页面
+func (*ArticlesController) Index(w http.ResponseWriter, r *http.Request) {
+
+	// 1. 获取结果集
+	article, err := article.GetAll()
+
+	// 2. 判断是否出现错误
+	if err != nil {
+		// 数据库错误
+		logger.LogError(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "500 服务器内部错误 文章创建失败，错误信息为：%v", err)
+	} else {
+		// 3. 加载模板
+		tmpl, err := template.New("index.gohtml").ParseFiles("resources/views/articles/index.gohtml")
+		logger.LogError(err)
+
+		// 4. 渲染模板
+		err = tmpl.Execute(w, article)
+		logger.LogError(err)
+	}
+
+}
