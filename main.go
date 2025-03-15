@@ -2,14 +2,11 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"goblog/bootstrap"
 	"goblog/pkg/database"
-	"goblog/pkg/logger"
 
 	"github.com/gorilla/mux"
 )
@@ -17,38 +14,6 @@ import (
 var db *sql.DB
 
 var router *mux.Router
-
-// Artcle 对应一条文章数据
-type Article struct {
-	Title, Body string
-	ID          int64
-}
-
-func (a Article) Delete() (rowsAffected int64, err error) {
-	rs, err := db.Exec("DELETE FROM articles WHERE id = ?", strconv.FormatInt(a.ID, 10))
-
-	if err != nil {
-		return 0, err
-	}
-
-	// 删除成功
-	if n, _ := rs.RowsAffected(); n > 0 {
-		return n, nil
-	}
-	return 0, nil
-}
-
-func getArticleByID(id string) (Article, error) {
-	article := Article{}
-	query := "SELECT * FROM articles WHERE id = ?"
-	err := db.QueryRow(query, id).Scan(&article.ID, &article.Title, &article.Body)
-	return article, err
-}
-
-func getRouteVariable(parameterName string, r *http.Request) string {
-	vars := mux.Vars(r)
-	return vars[parameterName]
-}
 
 func forceHTMLMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -71,50 +36,6 @@ func removeTrailingSlash(next http.Handler) http.Handler {
 	})
 }
 
-func articlesDeleteHandler(w http.ResponseWriter, r *http.Request) {
-	// 1. 获取 URL 参数
-	id := getRouteVariable("id", r)
-
-	// 2. 读取对应的文章数据
-	article, err := getArticleByID(id)
-
-	// 3. 如果出现错误
-	if err != nil {
-		if err == sql.ErrNoRows {
-			// 3.1 数据没找到 返回 404 页面
-			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(w, "<h1>404 文章未找到 :(</h1>"+
-				"<p>如有疑惑，请联系我们。</p>")
-		} else {
-			// 3.2 数据库错误
-			logger.LogError(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, "500 服务器内部错误 文章创建失败，错误信息为：%v", err)
-		}
-	} else {
-		// 4. 未出现错误，执行删除操作
-		rowsAffected, err := article.Delete()
-
-		// 4.1 如果出现错误
-		if err != nil {
-			logger.LogError(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, "500 服务器内部错误 文章删除失败，错误信息为：%v", err)
-		} else {
-			// 4.2 删除成功，跳转到文章列表页
-			if rowsAffected > 0 {
-				indexURL, _ := router.Get("articles.index").URL()
-				http.Redirect(w, r, indexURL.String(), http.StatusFound)
-			} else {
-				// Edge case
-				w.WriteHeader(http.StatusNotFound)
-				fmt.Fprint(w, "<h1>404 文章未找到 :(</h1>"+
-					"<p>如有疑惑，请联系我们。</p>")
-			}
-		}
-	}
-}
-
 func main() {
 	database.Initialize()
 	db = database.DB
@@ -130,7 +51,7 @@ func main() {
 	//router.HandleFunc("/articles/create", articlesCreateHandler).Methods("GET").Name("articles.create")
 	// router.HandleFunc("/articles/{id:[0-9]+}/edit", articlesEditHandler).Methods("GET").Name("articles.edit")
 	// router.HandleFunc("/articles/{id:[0-9]+}", articlesUpdateHandler).Methods("POST").Name("articles.update")
-	router.HandleFunc("/articles/{id:[0-9]+}/delete", articlesDeleteHandler).Methods("POST").Name("articles.delete")
+	// router.HandleFunc("/articles/{id:[0-9]+}/delete", articlesDeleteHandler).Methods("POST").Name("articles.delete")
 
 	// 中间件：强制内容类型为 HTML
 	router.Use(forceHTMLMiddleware)

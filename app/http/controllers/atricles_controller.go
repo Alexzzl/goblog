@@ -183,7 +183,7 @@ func (*ArticlesController) Edit(w http.ResponseWriter, r *http.Request) {
 			// 3.2 数据库错误
 			logger.LogError(err)
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, "500 服务器内部错误 文章创建失败，错误信息为：%v", err)
+			fmt.Fprintf(w, "500 服务器内部错误 文章更新失败，错误信息为：%v", err)
 		}
 	} else {
 		// 4. 读取成功，显示编辑文章表单
@@ -264,6 +264,48 @@ func (*ArticlesController) Update(w http.ResponseWriter, r *http.Request) {
 
 			err = tmpl.Execute(w, data)
 			logger.LogError(err)
+		}
+	}
+}
+
+func (*ArticlesController) Delete(w http.ResponseWriter, r *http.Request) {
+	// 1. 获取 URL 参数
+	id := route.GetRouteVariable("id", r)
+	//  2. 读取对应的文章数据
+	_article, err := article.Get(id)
+	// 3. 如果出现错误
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			// 3.1 数据没找到 返回 404 页面
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, "<h1>404 文章未找到 :(</h1>"+
+				"<p>如有疑惑，请联系我们。</p>")
+		} else {
+			// 3.2 数据库错误
+			logger.LogError(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "500 服务器内部错误 文章删除失败，错误信息为：%v", err)
+		}
+	} else {
+		// 4. 未出现错误，执行删除操作
+		rowsAffected, err := _article.Delete()
+
+		// 4.1 如果出现错误
+		if err != nil {
+			logger.LogError(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "500 服务器内部错误 文章删除失败，错误信息为：%v", err)
+		} else {
+			// 4.2 删除成功，跳转到文章列表页
+			if rowsAffected > 0 {
+				indexURL := route.Name2URL("articles.index")
+				http.Redirect(w, r, indexURL, http.StatusFound)
+			} else {
+				// Edge case
+				w.WriteHeader(http.StatusNotFound)
+				fmt.Fprint(w, "<h1>404 文章未找到 :(</h1>"+
+					"<p>如有疑惑，请联系我们。</p>")
+			}
 		}
 	}
 }
